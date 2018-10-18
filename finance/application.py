@@ -39,21 +39,21 @@ db = SQL("sqlite:///finance.db")
 @app.route("/")
 @login_required
 def index():
-    """Show portfolio of stocks"""
+    """Show portfolio of stocks --- TODO """
     return apology("TODO")
 
 
 @app.route("/buy", methods=["GET", "POST"])
 @login_required
 def buy():
-    """Buy shares of stock"""
+    """Buy shares of stock --- TODO """
     return apology("TODO")
 
 
 @app.route("/history")
 @login_required
 def history():
-    """Show history of transactions"""
+    """Show history of transactions --- TODO """
     return apology("TODO")
 
 
@@ -108,20 +108,48 @@ def logout():
 @app.route("/quote", methods=["GET", "POST"])
 @login_required
 def quote():
-    """Get stock quote."""
+    """Get stock quote. --- TODO """
     return apology("TODO")
 
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
-    """Register user"""
-    return apology("TODO")
+    """Register user --- TODO """
+    # Check for usage
+    if request.method == "POST":
 
+        # Was username submitted?
+        if not request.method("username"):
+            return apology("Provide a valid username")
+
+        # Was password submitted?
+        elif not request.method("password"):
+            return apology("Provide a valid password")
+
+        # Ensure password and verified password is the same
+        elif request.form.get("password") != request.form.get("badpass"):
+            return apology("Passwords don't match")
+
+        # Insert the new user into users, storing the hash of the user's password
+        result = db.execute("INSERT INTO users (id, name, hash),\
+                             VALUES (:username, :hash)",\
+                             username = request.form.get("username"),\
+                             hash = generate_password_hash(request.form.get("password")))
+
+        if not result:
+            return apology("Username already exists")
+
+
+        # remember which user has logged in
+        # redirect user to home page
+
+    else:
+        return render_template("/register.html")
 
 @app.route("/sell", methods=["GET", "POST"])
 @login_required
 def sell():
-    """Sell shares of stock"""
+    """Sell shares of stock --- TODO """
     return apology("TODO")
 
 

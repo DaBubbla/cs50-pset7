@@ -1,7 +1,7 @@
 import os
 
 from cs50 import SQL
-from flask import Flask, flash, redirect, render_template, request, session
+from flask import Flask, flash, redirect, render_template, request, session, url_for
 from flask_session import Session
 from tempfile import mkdtemp
 from werkzeug.exceptions import default_exceptions
@@ -47,7 +47,13 @@ def index():
 @login_required
 def buy():
     """Buy shares of stock --- TODO """
-    return apology("TODO")
+    if request.method =="POST":
+        # Add stock to user's portfolio
+
+        #update user's cash
+        return apology("TODO")
+    else:
+        return render_template("buy.html")
 
 
 @app.route("/history")
@@ -87,7 +93,7 @@ def login():
         session["user_id"] = rows[0]["id"]
 
         # Redirect user to home page
-        return redirect("/")
+        return redirect("index")
 
     # User reached route via GET (as by clicking a link or via redirect)
     else:
@@ -109,7 +115,17 @@ def logout():
 @login_required
 def quote():
     """Get stock quote. --- TODO """
-    return apology("TODO")
+    if request.method == "POST":
+        rows = lookup(request.form.get("symbol"))
+        #returns quote.name... ???
+
+        if not rows:
+            return apology("Invalid symbol")
+        else:
+            return render_template("quoted.html")#, name='symbol' might use this later?
+
+    else:
+        return render_template("quote.html")
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -127,7 +143,7 @@ def register():
             return apology("Provide a valid password")
 
         # Ensure password and verified password is the same
-        elif request.form.get("password") != request.form.get("badpass"):
+        elif request.form.get("password") != request.form.get("quote"):
             return apology("Passwords don't match")
 
         # Insert the new user into users, storing the hash of the user's password
@@ -141,7 +157,10 @@ def register():
 
 
         # remember which user has logged in
+        session['user_id'] = result
+
         # redirect user to home page
+        return redirect(url_for("/index"))
 
     else:
         return render_template("/register.html")

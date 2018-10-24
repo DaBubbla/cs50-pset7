@@ -35,6 +35,8 @@ Session(app)
 # Configure CS50 Library to use SQLite database
 db = SQL("sqlite:///finance.db")
 
+cash = 0 # User's cash? Testing location
+
 
 @app.route("/")
 @login_required
@@ -43,17 +45,43 @@ def index():
     return apology("TODO")
 
 
+
 @app.route("/buy", methods=["GET", "POST"])
 @login_required
 def buy():
-    """Buy shares of stock --- TODO """
-    if request.method =="POST":
-        # Add stock to user's portfolio
 
-        #update user's cash
-        return apology("TODO")
-    else:
+    """Buy shares of stock --- TODO """
+    if request.method =="GET":
         return render_template("buy.html")
+
+    else:
+        stock = lookup(request.form.get("symbol"))
+        if not stock:
+            return apology("Invalid symbol")
+
+        # Positive int for num of shares?
+        try:
+            shares = int(request.form.get("shares"))
+            if shares < 0:
+                return apology("Shares must be a positive number")
+        except:
+            return apology("Shares must be a positive number")
+
+        # Select user's cash
+        usersCash = db.execute("SELECT cash FROM users WHERE id = :id", id=session["user_id"])
+
+        # Is there enough $$ to buy?
+        if not usersCash or float(usersCash[0]["cash"]) < stock["price"] * shares:
+            return apology("Insufficient funds! :(")
+
+        # Update history
+        db.execute("INSERT INTO histories (symbol, shares, price, id) \
+        VALUES(:symbol, :shares, :price, :id)",\
+        symbol=stock["symbol"], shares=shares, price=usd(stock["price"]), id=session["user_id"] )
+
+        # Update user's cash
+        checkout = usd(stock["price"])
+        cashUpdate = db.execute("UPDATE users SET cash = cash - checkout WHERE id = :id", id=session['user_id'])
 
 
 @app.route("/history")

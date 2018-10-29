@@ -1,6 +1,7 @@
 import os
 
 from cs50 import SQL
+from datetime import datetime # Imported for histories
 from flask import Flask, flash, redirect, render_template, request, session, url_for
 from flask_session import Session
 from tempfile import mkdtemp
@@ -35,13 +36,36 @@ Session(app)
 # Configure CS50 Library to use SQLite database
 db = SQL("sqlite:///finance.db")
 
-cash = 0 # User's cash? Testing location
+
 
 
 @app.route("/")
 @login_required
 def index():
     """Show portfolio of stocks --- TODO """
+    # Select user's owned symbol + shares
+    portfolio = db.execute("SELECT shares, symbol FROM portfolio WHERE id = :id", id=session['user_id'])
+
+    cash = 0 # User's cash
+
+    # Updates symbol prices + total
+    for portfolio_symbol in portfolio:
+        symbol = portfolio_symbol["symbol"]
+        shares = portfolio_symbol["shares"]
+        stock = lookup(symbol)
+        total = shares * stock["price"]
+        cash += total
+
+        db.execute("UPDATE portfolio SET price=:price,\
+        total=:total WHERE id=:id AND symbol=:symbol", \
+        price=usd(stock["price"]), total=usd(total), id=session["user_id"], symbol=symbol)
+
+    # Update user's cash in portfolio
+
+    # Update total cash to include updated shares worth
+
+    # print portfolio in index
+
     return apology("TODO")
 
 
@@ -88,6 +112,13 @@ def buy():
 @login_required
 def history():
     """Show history of transactions --- TODO """
+    if request.method == "POST":
+        # Gather:
+            #symbol
+            #shares
+            #price
+            timestamp = datetime
+
     return apology("TODO")
 
 
@@ -163,32 +194,31 @@ def register():
     if request.method == "POST":
 
         # Was username submitted?
-        if not request.method("username"):
+        if not request.form.get("username"):
             return apology("Provide a valid username")
 
         # Was password submitted?
-        elif not request.method("password"):
+        elif not request.form.get("password"):
             return apology("Provide a valid password")
 
         # Ensure password and verified password is the same
-        elif request.form.get("password") != request.form.get("quote"):
+        elif request.form.get("password") != request.form.get("confirmation"):
             return apology("Passwords don't match")
 
         # Insert the new user into users, storing the hash of the user's password
-        result = db.execute("INSERT INTO users (id, name, hash),\
-                             VALUES (:username, :hash)",\
-                             username = request.form.get("username"),\
+        result = db.execute("INSERT INTO users (username, hash) \
+                             VALUES (:username, :hash)", \
+                             username = request.form.get("username"), \
                              hash = generate_password_hash(request.form.get("password")))
 
         if not result:
             return apology("Username already exists")
 
-
         # remember which user has logged in
         session['user_id'] = result
 
         # redirect user to home page
-        return redirect(url_for("/index"))
+        return redirect(url_for("/"))
 
     else:
         return render_template("/register.html")

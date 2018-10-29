@@ -23,9 +23,11 @@
                     <td>$10,000.00</td>
                 </tr>
             </tfoot>
-            <tbody>
-                <!--Display Quote collection-->
-                <!--Display Remaining monies-->
+            <tbody class="users-portfolio">
+                <!--stocks owned-->
+                {% for stock in stocks %}
+                    <td>{{ stock.symbol }} {{ stock.name }} {{ shares }} {{ price }} {{ cash }}</td>
+                {% endfor %}
             </tbody>
 
         </table>

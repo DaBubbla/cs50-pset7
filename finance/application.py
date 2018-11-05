@@ -37,42 +37,42 @@ Session(app)
 db = SQL("sqlite:///finance.db")
 
 
-
-
 @app.route("/")
 @login_required
 def index():
     """Show portfolio of stocks --- TODO """
     # Select user's owned symbol + shares
-    portfolio = db.execute("SELECT shares, symbol FROM portfolio WHERE id = :id", id=session['user_id'])
-
+    portfolio_symbols = db.execute("SELECT shares, symbol FROM portfolio WHERE id = :id", id = session["user_id"])
     cash = 0 # User's cash
 
     # Updates symbol prices + total
-    for portfolio_symbol in portfolio:
+    for portfolio_symbol in portfolio_symbols:
         symbol = portfolio_symbol["symbol"]
         shares = portfolio_symbol["shares"]
         stock = lookup(symbol)
         total = shares * stock["price"]
         cash += total
-
         db.execute("UPDATE portfolio SET price=:price,\
-        total=:total WHERE id=:id AND symbol=:symbol", \
-        price=usd(stock["price"]), total=usd(total), id=session["user_id"], symbol=symbol)
+            total=:total WHERE id=:id AND symbol=:symbol", \
+            price=usd(stock["price"]), total=usd(total), id=session["user_id"], symbol=symbol)
 
     # Update user's cash in portfolio
+    updated_cash = db.execute("SELECT cash FROM users WHERE id=:id", id=session["user_id"])
 
     # Update total cash to include updated shares worth
+    cash += updated_cash[0]["cash"]
 
     # print portfolio in index
+    updated_portfolio = db.execute("SELECT * FROM portfolio WHERE id=:id", id=session["user_id"])
 
-    return apology("TODO")
-
+    return render_template("index.html", stocks=updated_portfolio, cash=usd(updated_cash[0]["cash"]), total=usd(cash))
 
 
 @app.route("/buy", methods=["GET", "POST"])
 @login_required
 def buy():
+    """lookup datetime docs"""
+    #timeStamp = datetime()
 
     """Buy shares of stock --- TODO """
     if request.method =="GET":
@@ -99,8 +99,8 @@ def buy():
             return apology("Insufficient funds! :(")
 
         # Update history
-        db.execute("INSERT INTO histories (symbol, shares, price, id) \
-        VALUES(:symbol, :shares, :price, :id)",\
+        db.execute("INSERT INTO histories (symbol, shares, price, id, timeStamp) \
+        VALUES(:symbol, :shares, :price, :id, :timeStamp)",\
         symbol=stock["symbol"], shares=shares, price=usd(stock["price"]), id=session["user_id"] )
 
         # Update user's cash
@@ -152,7 +152,7 @@ def login():
         session["user_id"] = rows[0]["id"]
 
         # Redirect user to home page
-        return redirect("index")
+        return redirect(url_for("index"))
 
     # User reached route via GET (as by clicking a link or via redirect)
     else:
@@ -176,12 +176,12 @@ def quote():
     """Get stock quote. --- TODO """
     if request.method == "POST":
         rows = lookup(request.form.get("symbol"))
-        #returns quote.name... ???
+
 
         if not rows:
             return apology("Invalid symbol")
         else:
-            return render_template("quoted.html")#, name='symbol' might use this later?
+            return render_template("quoted.html", stock=rows)
 
     else:
         return render_template("quote.html")
@@ -190,7 +190,7 @@ def quote():
 @app.route("/register", methods=["GET", "POST"])
 def register():
     """Register user --- TODO """
-    # Check for usage
+
     if request.method == "POST":
 
         # Was username submitted?
@@ -208,8 +208,8 @@ def register():
         # Insert the new user into users, storing the hash of the user's password
         result = db.execute("INSERT INTO users (username, hash) \
                              VALUES (:username, :hash)", \
-                             username = request.form.get("username"), \
-                             hash = generate_password_hash(request.form.get("password")))
+                             username=request.form.get("username"), \
+                             hash=generate_password_hash(request.form.get("password")))
 
         if not result:
             return apology("Username already exists")
@@ -218,10 +218,10 @@ def register():
         session['user_id'] = result
 
         # redirect user to home page
-        return redirect(url_for("/"))
+        return redirect(url_for("index"))
 
     else:
-        return render_template("/register.html")
+        return render_template("register.html")
 
 @app.route("/sell", methods=["GET", "POST"])
 @login_required

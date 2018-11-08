@@ -20,21 +20,21 @@
 
             <tbody class="users-portfolio">
                 <!--stocks owned-->
+                 {% for stock in stocks %}
                 <tr>
-                {% for stock in stocks %}
                     <td>{{ stock.symbol }}</td>
                     <td>{{ stock.name }}</td>
                     <td>{{ stock.shares }}</td>
                     <td>{{ stock.price }}</td>
                     <td>{{ stock.total }}</td>
-                {% endfor %}
                 </tr>
+                {% endfor %}
             </tbody>
             <tfoot>
                 <tr>
 
                     <td colspan="4"></td>
-                    <td>{{ total }}</b></td>
+                    <td>{{ cash }}</b></td>
                 </tr>
             </tfoot>
 

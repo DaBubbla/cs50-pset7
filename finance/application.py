@@ -71,14 +71,12 @@ def index():
 @app.route("/buy", methods=["GET", "POST"])
 @login_required
 def buy():
-    """lookup datetime docs"""
-    #timeStamp = datetime()
-
     """Buy shares of stock --- TODO """
     if request.method =="GET":
         return render_template("buy.html")
 
     else:
+        # Proper symbol?
         stock = lookup(request.form.get("symbol"))
         if not stock:
             return apology("Invalid symbol")
@@ -99,14 +97,30 @@ def buy():
             return apology("Insufficient funds! :(")
 
         # Update history
-        db.execute("INSERT INTO histories (symbol, shares, price, id, timeStamp) \
-        VALUES(:symbol, :shares, :price, :id, :timeStamp)",\
+        db.execute("INSERT INTO history (symbol, shares, price, id) \
+        VALUES(:symbol, :shares, :price, :id )",\
         symbol=stock["symbol"], shares=shares, price=usd(stock["price"]), id=session["user_id"] )
 
         # Update user's cash
-        checkout = usd(stock["price"])
-        cashUpdate = db.execute("UPDATE users SET cash = cash - checkout WHERE id = :id", id=session['user_id'])
+        db.execute("UPDATE users SET cash = cash - :purchase WHERE id = :id", id = session["user_id"], purchase = stock["price"] * float(shares) )
 
+        # Select users shares
+        user_shares = db.execute("SELECT shares FROM portfolio WHERE id = :id AND symbol = :symbol", id = session["user_id"], symbol = stock["symbol"])
+
+        # If user doesnt have shares of that symbol create new object
+        if not user_shares:
+            db.execute("INSERT INTO portfolio (name, shares, price, total, symbol, id) \
+                        VALUES(:name, :shares, :price, :total, :symbol, :id)", \
+                        name = stock["name"], shares = shares, price = usd(stock["price"]), \
+                        total = usd(shares * stock["price"]), symbol = stock["symbol"], id = session["user_id"] )
+
+        # Else increments the shares count
+        else:
+            total_shares = user_shares[0]["shares"] + shares
+            db.execute("UPDATE portfolio SET shares=:shares WHERE id=:id AND \
+                        symbol = :symbol", shares = total_shares, id = session["user_id"], symbol = stock["symbol"] )
+        # Return to index
+        return redirect(url_for("index"))
 
 @app.route("/history")
 @login_required
@@ -117,8 +131,8 @@ def history():
             #symbol
             #shares
             #price
-            timestamp = datetime
-
+            # timestamp = datetime
+            print("Hello history")
     return apology("TODO")
 
 

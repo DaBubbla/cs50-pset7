@@ -6,38 +6,35 @@
 {% endblock %}
 
 {% block main %}
-    <table class="table">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Symbol</th>
+                <th>Name</th>
+                <th>Shares</th>
+                <th>Price</th>
+                <th>TOTAL</th>
+            </tr>
+        </thead>
 
-            <thead>
-                <tr>
-                    <th>Symbol</th>
-                    <th>Name</th>
-                    <th>Shares</th>
-                    <th>Price</th>
-                    <th>TOTAL</th>
-                </tr>
-            </thead>
+        <tfoot>
+            <tr>
+                <td colspan="4">Cash</td>
+                <td>{{ cash_remaining | usd }}</td>
+            </tr>
+        </tfoot>
 
-            <tbody class="users-portfolio">
-                <!--stocks owned-->
-                 {% for stock in stocks %}
+        <tbody>
+            {% for stock in stocks %}
                 <tr>
                     <td>{{ stock.symbol }}</td>
                     <td>{{ stock.name }}</td>
-                    <td>{{ stock.shares }}</td>
-                    <td>{{ stock.price }}</td>
-                    <td>{{ stock.total }}</td>
+                    <td>{{ stock.total_shares }}</td>
+                    <td>{{ quotes[stock.symbol]["price"] | usd }}</td>
+                    <td>{{ (quotes[stock.symbol]["price"] * stock.total_shares) | usd }}</td>
                 </tr>
-                {% endfor %}
-            </tbody>
-            <tfoot>
-                <tr>
+            {% endfor %}
 
-                    <td colspan="4"></td>
-                    <td>{{ cash }}</b></td>
-                </tr>
-            </tfoot>
-
-        </table>
-
+        </tbody>
+    </table>
 {% endblock %}

@@ -12,7 +12,7 @@
                     <option autofocus disabled selected value>Symbol</option>
                     <!--options go here-->
                     {% for stock in stocks %}
-                    <option value="symbol" data-total-shares="{{ stocks.total_shares }}">{{ symbol }}</option>
+                    <option value="symbol" data-total-shares="{{ stocks.total_shares }}">{{ stock.symbol }}</option>
                     {% endfor %}
 
                 </select>

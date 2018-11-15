@@ -49,12 +49,12 @@ def index():
 
     for stock in stocks:
         quotes[stock["symbol"]] = lookup(stock["symbol"])
-        # make room for name...
+
 
     cash_remaining = users[0]["cash"]
     total = cash_remaining
 
-    return render_template("index.html", quotes=quotes, stocks=stocks, name=stock["name"], total=total, cash_remaining=cash_remaining)
+    return render_template("index.html", quotes=quotes, stocks=stocks,  total=total, cash_remaining=cash_remaining)
 
 
 @app.route("/buy", methods=["GET", "POST"])
@@ -93,11 +93,11 @@ def buy():
         if total_price > cash_remaining:
             return apology("Insufficient funds! :( ")
 
-        name = stock["name"]
+
         # Updates histor and portfolio
         db.execute("UPDATE users SET cash = cash - :price WHERE id = :user_id", price = total_price, user_id=session["user_id"])
-        db.execute("INSERT INTO portfolio (user_id, symbol, name, shares, per_share) VALUES(:user_id, :symbol, :name :shares, :price)", \
-                        user_id=session["user_id"], symbol=request.form.get("symbol"), name=stock["name"], shares=shares, price=per_share )
+        db.execute("INSERT INTO portfolio (user_id, symbol, name, shares, per_share) VALUES(:user_id, :symbol, :name, :shares, :price)", \
+                        user_id=session["user_id"], symbol=request.form.get("symbol"), name=stock["name"], shares=int(request.form.get("shares")), price=per_share )
 
         flash("Ka-Ching! Bought")
 
@@ -266,7 +266,7 @@ def sell():
         return redirect(url_for("index"))
 
     else:
-        stocks = db.execute("SELECT symbol, SUM(user_shares) as total_shares FROM portfolio WHERE user_id = :user_id GROUP BY symbol HAVING total_shares > 0", user_id = session["user_id"])
+        stocks = db.execute("SELECT symbol, SUM(shares) as total_shares FROM portfolio WHERE user_id = :user_id GROUP BY symbol HAVING total_shares > 0", user_id = session["user_id"])
 
         return render_template("sell.html", stocks=stocks)
 

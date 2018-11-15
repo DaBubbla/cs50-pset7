@@ -10,15 +10,25 @@
         <thead>
             <tr>
                 <th>Symbol</th>
+                <th>Name</th>
                 <th>Shares</th>
                 <th>Price</th>
                 <th>Transaction</th>
             </tr>
         </thead>
         <tbody>
-            {% for stocks in stocks %}
-            {{ stock.symbol }}, {{ shares }}, {{ price }}, {{ timestamp }}
-            {% endfor%}
+
+            {% for tran in trans %}
+            <tr>
+                <td>{{ tran.symbol }}</td>
+                <td>'{{ tran.name }}</td>
+                <td>{{ tran.shares }}</td>
+                <td>{{ tran.per_share | usd}}</td>
+                <td>{{ tran.timeStamp }}</td>
+                </td>
+            </tr>
+            {% endfor %}
+
         </tbody>
     </table>
 {% endblock%}

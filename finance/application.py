@@ -107,15 +107,10 @@ def buy():
 @login_required
 def history():
     """Show history of transactions --- TODO """
-    if request.method == "POST":
-        # Gather:
-            #symbol
-            #shares
-            #price
-            # timestamp = datetime
-            print("Hello history")
-    return apology("TODO")
 
+    trans = db.execute("SELECT symbol, name, shares, per_share, timeStamp FROM portfolio WHERE user_id = :user_id ORDER BY timeStamp", user_id=session["user_id"])
+
+    return render_template("history.html", trans=trans)
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -223,17 +218,17 @@ def sell():
     """Sell shares of stock --- TODO """
     if request.method == "POST":
 
-        quote = lookup(request.form.get("symbol"))
+        symbol = lookup(request.form.get("symbol"))
 
         # ensure proper symbol
-        if quote == None:
+        if not symbol:
                 return apology("Invalid Symbol", 400)
 
         # Positive number of shares?
         try:
             shares = int(request.form.get("shares"))
         except:
-            return apology("Must have a positive number of shares!", 400)
+            return apology("Shares must be a positive number!", 400)
 
         # Shares must be more than 0
         if shares <= 0:
@@ -246,17 +241,17 @@ def sell():
         if len(stock) != 1 or stock[0]["total_shares"] <= 0 or stock[0]["total_share"] < shares:
             return apology("You cant sell 0 or more than you own!", 400)
 
-        # Does the user exist?
+        # Select the user
         rows = db.execute("SELECT cash FROM users WHERE id = :id", id = session["user_id"])
 
         # Calculate user's cash
         remaining = rows[0]["cash"]
-        per_share = quote["price"]
+        per_share = symbol["price"]
 
         total_price = per_share * shares
 
         # Updates for sale
-        db.execute("UPDATE users SET cash = cash = :price WHERE id = :id", price=total_price, id=session["user_id"])
+        db.execute("UPDATE users SET cash = cash + :price WHERE id = :id", price=total_price, id=session["user_id"])
         db.execute("INSERT INTO portfolio (id, symbol, name, shares, per_share) \
                     VALUES (:id, :symbol, :name, :shares, :price)",\
                     id = session["user_id"], symbol = request.form.get("symbol"), name=stock["name"], shares=shares, price= per_share )

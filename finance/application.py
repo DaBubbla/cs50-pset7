@@ -61,13 +61,13 @@ def index():
 @login_required
 def buy():
     """Buy shares of stock --- TODO """
-    if request.method =="GET":
+    if request.method == "GET":
         return render_template("buy.html")
 
     else:
         # Proper symbol?
-        stock = lookup(request.form.get("symbol"))
-        if not stock:
+        quote = lookup(request.form.get("symbol"))
+        if not quote:
             return apology("Invalid symbol", 400)
 
         # Positive int for num of shares?
@@ -85,7 +85,7 @@ def buy():
 
         # Users $$
         cash_remaining = rows[0]["cash"]
-        per_share = stock["price"]
+        per_share = quote["price"]
 
         # Calculate price of requested shares
         total_price = per_share * shares
@@ -97,7 +97,7 @@ def buy():
         # Updates histor and portfolio
         db.execute("UPDATE users SET cash = cash - :price WHERE id = :user_id", price = total_price, user_id=session["user_id"])
         db.execute("INSERT INTO portfolio (user_id, symbol, name, shares, per_share) VALUES(:user_id, :symbol, :name, :shares, :price)", \
-                        user_id=session["user_id"], symbol=request.form.get("symbol"), name=stock["name"], shares=int(request.form.get("shares")), price=per_share )
+                        user_id=session["user_id"], symbol=quote["symbol"], name=quote["name"], shares=int(request.form.get("shares")), price=per_share )
 
         flash("Ka-Ching! Bought")
 
@@ -230,18 +230,19 @@ def sell():
         except:
             return apology("Shares must be a positive number!", 400)
 
+        # Does the user have enough shares?
+        stock = db.execute("SELECT SUM(shares) as total_shares FROM portfolio WHERE user_id = :user_id and symbol = :symbol GROUP BY symbol",\
+                            user_id = session["user_id"], symbol = request.form.get("symbol"))
+
         # Shares must be more than 0
         if shares <= 0:
             return apology("0 is not a valid number of shares!", 400)
 
-        # Does the user have enough shares?
-        stock = db.execute("SELECT SUM(shares) as total_shares FROM portfolio WHERE id = :id and symbol = :symbol GROUP BY symbol",\
-                            user_id = session["user_id"], symbol = request.form.get("symbol"))
 
-        if len(stock) != 1 or stock[0]["total_shares"] <= 0 or stock[0]["total_share"] < shares:
-            return apology("You cant sell 0 or more than you own!", 400)
+        # if stock["total_shares"] <= 0 or stock[0]["total_share"] < shares:
+        #     return apology("You cant sell 0 or more than you own!", 400)
 
-        # Select the user
+        # Select the user's cash
         rows = db.execute("SELECT cash FROM users WHERE id = :id", id = session["user_id"])
 
         # Calculate user's cash
@@ -250,11 +251,21 @@ def sell():
 
         total_price = per_share * shares
 
+
+
         # Updates for sale
-        db.execute("UPDATE users SET cash = cash + :price WHERE id = :id", price=total_price, id=session["user_id"])
-        db.execute("INSERT INTO portfolio (id, symbol, name, shares, per_share) \
+        db.execute("UPDATE users SET cash = cash + :price WHERE id = :id", price=symbol["price"] * float(shares), id=session["user_id"])
+        db.execute("INSERT INTO history (id, symbol, name, shares, per_share) \
                     VALUES (:id, :symbol, :name, :shares, :price)",\
-                    id = session["user_id"], symbol = request.form.get("symbol"), name=stock["name"], shares=shares, price= per_share )
+                    id = session["user_id"], symbol = request.form.get("symbol"), name=symbol["name"], shares=shares, price= per_share )
+
+        # Update user shares
+        user_shares = db.execute("SELECT shares from portfolio WHERE user_id=:user_id AND symbol=:symbol", user_id=session["user_id"], symbol=symbol["symbol"] )#monitor
+        if not user_shares or int(user_shares[0]["shares"]) < shares:
+            return apology("Not enough shares")
+
+
+
 
         flash("Sold!")
 

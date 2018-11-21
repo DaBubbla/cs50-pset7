@@ -21,9 +21,9 @@
             {% for tran in trans %}
             <tr>
                 <td>{{ tran.symbol }}</td>
-                <td>'{{ tran.name }}</td>
+                <td>{{ tran.name }}</td>
                 <td>{{ tran.shares }}</td>
-                <td>{{ tran.per_share | usd}}</td>
+                <td>{{ tran.per_share }}</td>
                 <td>{{ tran.timeStamp }}</td>
                 </td>
             </tr>

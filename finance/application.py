@@ -239,9 +239,6 @@ def sell():
             return apology("0 is not a valid number of shares!", 400)
 
 
-        # if stock["total_shares"] <= 0 or stock[0]["total_share"] < shares:
-        #     return apology("You cant sell 0 or more than you own!", 400)
-
         # Select the user's cash
         rows = db.execute("SELECT cash FROM users WHERE id = :id", id = session["user_id"])
 
@@ -254,16 +251,16 @@ def sell():
 
 
         # Updates for sale
-        db.execute("UPDATE users SET cash = cash + :price WHERE id = :id", price=symbol["price"] * float(shares), id=session["user_id"])
-        db.execute("INSERT INTO history (id, symbol, name, shares, per_share) \
-                    VALUES (:id, :symbol, :name, :shares, :price)",\
-                    id = session["user_id"], symbol = request.form.get("symbol"), name=symbol["name"], shares=shares, price= per_share )
+        db.execute("UPDATE users SET cash = cash + :price WHERE id = :user_id", price = total_price, user_id = session["user_id"])
+        db.execute("INSERT INTO portfolio (user_id, symbol, name, shares, per_share) \
+                    VALUES (:user_id, :symbol, :name, :shares, :price)",\
+                    user_id = session["user_id"], symbol = request.form.get("symbol"), name=symbol["name"], shares=-shares, price= per_share )
 
         # Update user shares
-        user_shares = db.execute("SELECT shares from portfolio WHERE user_id=:user_id AND symbol=:symbol", user_id=session["user_id"], symbol=symbol["symbol"] )#monitor
+        user_shares = db.execute("SELECT shares FROM portfolio WHERE user_id=:user_id AND symbol=:symbol", user_id=session["user_id"], symbol=symbol["symbol"] )#monitor
+
         if not user_shares or int(user_shares[0]["shares"]) < shares:
             return apology("Not enough shares")
-
 
 
 
